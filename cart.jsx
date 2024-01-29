@@ -100,18 +100,18 @@ const Products = (props) => {
   console.log(`Rendering Products ${JSON.stringify(data)}`);
   // Fetch Data
   const addToCart = (e) => {
-    let name = e.target.name;
-    let itemIndex = items.findIndex((item) => item.name == name);
-    if (itemIndex !== -1 && items[itemIndex].instock > 0) {
-      let newItems = [...items];
-      newItems[itemIndex] = {...newItems[itemIndex], instock: newItems[itemIndex].instock - 1};
-      setItems(newItems);
-      setCart([...cart, newItems[itemIndex]]);
-    } else {
-      alert("Sorry, this item is out of stock");
-    }
-  };
-  
+  let name = e.target.name;
+  let itemIndex = items.findIndex((item) => item.name == name);
+  if (itemIndex !== -1 && items[itemIndex].instock > 0) {
+    let newItems = [...items];
+    newItems[itemIndex] = {...newItems[itemIndex], instock: newItems[itemIndex].instock - 1};
+    setItems(newItems);
+    setCart([...cart, newItems[itemIndex]]);
+  } else {
+    alert("Sorry, this item is out of stock");
+  }
+};
+
     //doFetch(query);
   const deleteCartItem = (index) => {
     let newCart = cart.filter((item, i) => index != i);
@@ -124,12 +124,13 @@ const Products = (props) => {
       <li key={index}>
         <Image src={photos[index % 4]} width={70} roundedCircle></Image>
         <Button variant="primary" size="large">
-          {item.name}:{item.cost} - In Stock: {item.instock}
+          {item.name} ${item.cost} - In Stock: {item.instock}
         </Button>
         <input name={item.name} type="submit" onClick={addToCart}></input>
       </li>
     );
   });
+  
   
   let cartList = cart.map((item, index) => {
     return (
