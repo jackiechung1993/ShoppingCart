@@ -1,8 +1,8 @@
 // simulate getting products from DataBase
 const products = [
-  { name: "Apples_:", country: "Italy", cost: 3, instock: 10 },
+  { name: "Apples:", country: "Italy", cost: 3, instock: 10 },
   { name: "Oranges:", country: "Spain", cost: 4, instock: 3 },
-  { name: "Beans__:", country: "USA", cost: 2, instock: 5 },
+  { name: "Beans:", country: "USA", cost: 2, instock: 5 },
   { name: "Cabbage:", country: "USA", cost: 1, instock: 8 },
 ];
 //=========Cart=============
@@ -90,9 +90,9 @@ const Products = (props) => {
   } = ReactBootstrap;
   //  Fetch Data
   const { Fragment, useState, useEffect, useReducer } = React;
-  const [query, setQuery] = useState("http://localhost:1337/products");
+  const [query, setQuery] = useState("http://localhost:1337/api/products");
   const [{ data, isLoading, isError }, doFetch] = useDataApi(
-    "http://localhost:1337/products",
+    "http://localhost:1337/api/products",
     {
       data: [],
     }
@@ -101,11 +101,18 @@ const Products = (props) => {
   // Fetch Data
   const addToCart = (e) => {
     let name = e.target.name;
-    let item = items.filter((item) => item.name == name);
-    console.log(`add to Cart ${JSON.stringify(item)}`);
-    setCart([...cart, ...item]);
-    //doFetch(query);
+    let itemIndex = items.findIndex((item) => item.name == name);
+    if (itemIndex !== -1 && items[itemIndex].instock > 0) {
+      let newItems = [...items];
+      newItems[itemIndex] = {...newItems[itemIndex], instock: newItems[itemIndex].instock - 1};
+      setItems(newItems);
+      setCart([...cart, newItems[itemIndex]]);
+    } else {
+      alert("Sorry, this item is out of stock");
+    }
   };
+  
+    //doFetch(query);
   const deleteCartItem = (index) => {
     let newCart = cart.filter((item, i) => index != i);
     setCart(newCart);
@@ -113,33 +120,31 @@ const Products = (props) => {
   const photos = ["apple.png", "orange.png", "beans.png", "cabbage.png"];
 
   let list = items.map((item, index) => {
-    //let n = index + 1049;
-    //let url = "https://picsum.photos/id/" + n + "/50/50";
-
     return (
       <li key={index}>
         <Image src={photos[index % 4]} width={70} roundedCircle></Image>
         <Button variant="primary" size="large">
-          {item.name}:{item.cost}
+          {item.name}:{item.cost} - In Stock: {item.instock}
         </Button>
         <input name={item.name} type="submit" onClick={addToCart}></input>
       </li>
     );
   });
+  
   let cartList = cart.map((item, index) => {
     return (
       <Accordion.Item key={1+index} eventKey={1 + index}>
-      <Accordion.Header>
-        {item.name}
-      </Accordion.Header>
-      <Accordion.Body onClick={() => deleteCartItem(index)}
-        eventKey={1 + index}>
-        $ {item.cost} from {item.country}
-      </Accordion.Body>
-    </Accordion.Item>
+        <Accordion.Header>
+          {item.name} - In Stock: {item.instock}
+        </Accordion.Header>
+        <Accordion.Body onClick={() => deleteCartItem(index)}
+            eventKey={1 + index}>
+          $ {item.cost} from {item.country}
+        </Accordion.Body>
+      </Accordion.Item>
     );
   });
-
+  
   let finalList = () => {
     let total = checkOut();
     let final = cart.map((item, index) => {
@@ -151,7 +156,7 @@ const Products = (props) => {
     });
     return { final, total };
   };
-
+  
   const checkOut = () => {
     let costs = cart.map((item) => item.cost);
     const reducer = (accum, current) => accum + current;
@@ -159,16 +164,23 @@ const Products = (props) => {
     console.log(`total updated to ${newTotal}`);
     return newTotal;
   };
-  // TODO: implement the restockProducts function
+  
   const restockProducts = (url) => {
     doFetch(url);
     let newItems = data.map((item) => {
       let {name, country, cost, instock} = item;
-      return {name, country, cost, instock};
+      let itemIndex = items.findIndex((i) => i.name == name);
+      if (itemIndex !== -1) {
+        let newItems = [...items];
+        newItems[itemIndex] = {...newItems[itemIndex], instock: newItems[itemIndex].instock + instock};
+        setItems(newItems);
+      } else {
+        return {name, country, cost, instock};
+      }
     });
-    setItems([...items,...newItems]);
+    setItems([...items,...newItems.filter(item => item)]);
   };
-
+  
   return (
     <Container>
       <Row>
@@ -182,14 +194,18 @@ const Products = (props) => {
         </Col>
         <Col>
           <h1>CheckOut </h1>
-          <Button onClick={checkOut}>CheckOut $ {finalList().total}</Button>
-          <div> {finalList().total > 0 && finalList().final} </div>
+          {finalList().total > 0 && (
+            <>
+              <Button onClick={checkOut}>CheckOut $ {finalList().total}</Button>
+              <div>{finalList().final}</div>
+            </>
+          )}
         </Col>
       </Row>
       <Row>
         <form
           onSubmit={(event) => {
-            restockProducts(`http://localhost:1337/${query}`);
+            restockProducts(`http://localhost:1337/api/${query}`);
             console.log(`Restock called on ${query}`);
             event.preventDefault();
           }}
@@ -205,5 +221,5 @@ const Products = (props) => {
     </Container>
   );
 };
-// ========================================
+
 ReactDOM.render(<Products />, document.getElementById("root"));
